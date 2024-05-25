@@ -8,3 +8,4 @@ class Cell():
         self.is_alive = is_alive
         self.neighbor_count = neighbor_count
         self.dead_time = dead_time
+        self.is_paused = False

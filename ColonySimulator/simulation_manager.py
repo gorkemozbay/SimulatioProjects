@@ -4,6 +4,7 @@ import time
 
 from datetime import datetime
 
+from UI_manager import UI_manager
 from configs import *
 from cell    import *
 from utils   import *
@@ -13,10 +14,17 @@ class SimulationManager():
     def __init__(self, screen):
         self.cell_list = []
         self.screen = screen
+        self.UI_manager = UI_manager()
+        self.is_paused = False
+        self.total_stop_time = 0
+        self.last_stop_time  = None
 
         for i in range(0, SCREEN_WIDTH // CELL_SIZE):
             for j in range(0, SCREEN_HEIGHT // CELL_SIZE):
                 self.cell_list.append(Cell(i, j))
+
+        self.set_by_click()
+
 
     def update(self):
         self.screen.fill(BACKGROUND)
@@ -32,9 +40,21 @@ class SimulationManager():
             cell.neighbor_count    = self.check_neighbors_count(cell)
             new_cell               = self.update_cell(cell)
             new_ls.append(new_cell)
-        
         self.cell_list = new_ls
-        time.sleep(GAME_INTERVAL)
+
+
+    def update_UI(self):
+        restart = self.UI_manager.draw_restart_button(self.screen)
+        end     = self.UI_manager.draw_end_button(self.screen)
+        pause   = self.UI_manager.draw_pause_button(self.screen, self.is_paused)
+        
+        if restart:
+            self.restart()
+        else:
+            if pause:
+                self.is_paused = not self.is_paused 
+                self.update_stop_time()
+        return end, self.is_paused
 
 
     def update_cell(self, cell):
@@ -45,7 +65,8 @@ class SimulationManager():
             if cell.is_alive: 
                 new_cell = Cell(cell.x, cell.y, False, cell.neighbor_count, datetime.now())
             else:
-                new_cell = Cell(cell.x, cell.y, False, cell.neighbor_count, cell.dead_time) 
+                new_cell = Cell(cell.x, cell.y, False, cell.neighbor_count, cell.dead_time)
+                new_cell.is_paused = cell.is_paused 
         return new_cell
     
 
@@ -133,12 +154,37 @@ class SimulationManager():
         if cell.dead_time == None:
             return BACKGROUND
         time_passed = (datetime.now() - cell.dead_time).total_seconds()
+        if cell.is_paused:
+            time_passed -= self.total_stop_time
         if time_passed >= FADE_OUT_TIMEOUT:
             return BACKGROUND
         else:
             return self.map_dead_time(time_passed)
     
-    def map_dead_time(self, dead_time):
-        color_code = max(BACKGROUND[0], 255 - (dead_time * FADE_INTENSITY))
+
+    def map_dead_time(self, time_passed):
+        color_code = max(BACKGROUND[0], 255 - (time_passed * FADE_INTENSITY))
         return (color_code, color_code, color_code)
         
+
+    def restart(self):
+        self.cell_list = []
+        self.is_paused = False
+        self.total_stop_time = 0
+
+        for i in range(0, SCREEN_WIDTH // CELL_SIZE):
+            for j in range(0, SCREEN_HEIGHT // CELL_SIZE):
+                self.cell_list.append(Cell(i, j))
+        
+        self.set_by_click()
+        
+    
+    def update_stop_time(self):
+        if self.is_paused:
+            for cell in self.cell_list:
+                if not cell.is_alive:
+                    cell.is_paused = True
+            self.total_stop_time = 0
+            self.last_stop_time = datetime.now()
+        else:
+            self.total_stop_time = (datetime.now() - self.last_stop_time).total_seconds()
