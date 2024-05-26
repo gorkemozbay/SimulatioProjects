@@ -1,13 +1,25 @@
 
 import pygame
-import time
 from   utils import *
 
 class UI_manager():
     
     def __init__(self):
         self.pause_time = None
+        self.is_paused  = False
 
+    
+    def render_UI(self, screen):
+        restart = self.draw_restart_button(screen)
+        end     = self.draw_end_button(screen)
+        pause   = self.draw_pause_button(screen, self.is_paused)
+        
+        if pause:
+            self.is_paused = not self.is_paused
+        
+        return restart, end, pause
+    
+    
     def draw_button(self, screen ,message, x, y, width, height, font, inactive_color=BUTTON_IDLE, active_color=BUTTON_ACTIVE):
 
         mouse = pygame.mouse.get_pos()
@@ -48,6 +60,7 @@ class UI_manager():
 
         return is_clicked
     
+    
     def check_click_valid(self):
         if self.pause_time == None:
             return True
@@ -56,3 +69,8 @@ class UI_manager():
             return True
         else:
             return False
+
+    
+    def restart(self):
+        self.pause_time = None
+        self.is_paused  = False

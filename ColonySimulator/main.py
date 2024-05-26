@@ -1,12 +1,11 @@
 import pygame
-import sys
-import time
 
 from datetime import datetime
 
 from configs import *
-from cell import Cell
-from simulation_manager import SimulationManager
+from simulation_manager          import SimulationManager
+from Screens.screen_manager      import ScreenManager
+from Screens.Screens.game_screen import GameScreen
 
 
 def set_screen():
@@ -18,37 +17,30 @@ def set_screen():
     return screen
 
 
-def start_app(screen):
+def set_screen_manager():
+    screen_manager = ScreenManager()
+    game_screen   = GameScreen(screen_manager)
+    
+    screen_manager.add_screen("GameScreen", game_screen)
+    screen_manager.set_screen("GameScreen")
+    return screen_manager
 
-    # total_count = (SCREEN_WIDTH // CELL_SIZE) * (SCREEN_HEIGHT // CELL_SIZE)
-    # all_list = [i for i in range(total_count)]
-    # idx_list = random.sample(all_list, START_LIVE_CELL_COUNT)
 
-    simulation_manager = SimulationManager(screen)
+def start_app(screen, screen_manager):
 
-    running = True
-    stop    = False
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-
-        if not stop:
-            simulation_manager.update()
-        else:
-            pass
-        is_end, stop = simulation_manager.update_UI()
-        running = not is_end
+    while screen_manager.running:
+        events = pygame.event.get()
+        screen_manager.handle_events(events)
+        screen_manager.render(screen)
+        screen_manager.update()
         pygame.display.flip()
-        time.sleep(GAME_INTERVAL)
-
+    
     pygame.quit()
-    sys.exit()
-
-
+    
 def main():
     screen = set_screen()
-    start_app(screen)
+    screen_manager = set_screen_manager()
+    start_app(screen, screen_manager)
 
 
 if __name__ == "__main__":
